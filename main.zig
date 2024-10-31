@@ -29,6 +29,8 @@ pub fn main() !void {
         }
 
         // Call Derivation and handle potential error
+        
+
         try parse(input.?);
         const derivation_success: bool = try leftmost_derivation(tokens);
         if (!derivation_success) {
@@ -105,13 +107,13 @@ pub fn parse(input: []const u8) !void {
 
     // Check if there is content between "wake" and "sleep"
     if (user_input.len <= 11) { // 10 characters for validation
-        std.debug.print("\x1b[0;31mError: No content between wake and sleep.\x1b[0;0m\n", .{});
+        std.debug.print("\x1b[0;31mError: No content between 'wake' and 'sleep'.\x1b[0;0m\n", .{});
         return;
     }
 
     // Check if the input starts with "wake"
     if (!std.mem.startsWith(u8, user_input, wake_prefix)) {
-        std.debug.print("Error: controls must start with 'wake'.\n", .{});
+        std.debug.print("\x1b[0;31mError: controls must start with 'wake'.\x1b[0;0m\n", .{});
         return; // Exit the function on error
     }
 
@@ -150,7 +152,7 @@ pub fn parse(input: []const u8) !void {
 
     // If no semicolon is found, return the entire input as is
     if (semicolon_index == null) {
-        std.debug.print("No valid controls found. Controls must end with a ';'.\n", .{});
+        std.debug.print("\x1b[0;31mNo valid controls found. Controls must end with a ';'.\x1b[0;0m\n", .{});
         return;
     }
 
