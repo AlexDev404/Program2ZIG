@@ -34,6 +34,11 @@ pub fn main() !void {
 
         // Call Derivation and handle potential error
         try parse(input.?);
+        const derivation_error: bool = try leftmost_derivation(tokens);
+        if(derivation_error){
+            std.debug.print("Error in derivation\n", .{});
+            return;
+        }
     }
 }
 
@@ -88,7 +93,7 @@ pub fn tokenize_controls(input: []const u8) !void {
         }
     }
 }
-// ------------------------------------------------- Derivation Process -------------------------------------------------
+// ------------------------------------------------- Parse Function -------------------------------------------------
 
 // To get the controls, wake and sleep will be removed
 pub fn parse(input: []const u8) !void {
@@ -188,5 +193,80 @@ pub fn parse(input: []const u8) !void {
         try tokenize_controls(next_control);
 
         next_input = std.mem.trim(u8, next_input[next_derivation + 1 ..], " \t\n\r");
+    }
+}
+
+// ------------------------------------------------- Derivation Function -------------------------------------------------
+
+// Function to generate the leftmost derivation output
+// pub fn leftmost_derivation() c_int {
+//     std.debug.print("\nLeftmost Derivation\n", .{});
+
+//     return 0;
+
+// }
+
+pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
+    // Display the derivation steps
+    std.debug.print("\n************************************************************\n", .{});
+    std.debug.print("                  Leftmost Derivation:\n", .{});
+    std.debug.print("\x1b[1;32m\n", .{});
+
+    // Step 1: Initial form
+    var sentential_form: [256]u8 = undefined;
+    std.mem.copyForwards(u8, &sentential_form, "\x1b[0;32mwake \x1b[1;37m<commands>\x1b[1;0m  \x1b[0;32msleep\x1b[1;0m ");
+    std.debug.print("\n<program>  ->  {s}\n", .{sentential_form});
+    var loop: usize = 1;
+
+    // Step 2: Progressively replace <commands> with <command><commands> for each command
+    for (input.items, 0..) |_, index| {
+        if (index == 0) {
+            // First step: Replace the first <commands> with <command><commands>
+            _ = std.mem.replace(u8, &sentential_form, "<commands>", "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m", &sentential_form);
+            std.debug.print("Sentential form: '{s}'\n", .{sentential_form});
+        } else {
+            // For subsequent steps, replace the remaining <commands> with <command><commands> progressively
+            // sentential_form = std.mem.replace(u8, sentential_form, "<commands>", "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m");
+        }
+
+        // Once we reach the last command, replace <commands> with just <command>
+        if (index == input.capacity - 1) {
+            // sentential_form = std.mem.replace(u8, sentential_form, "<commands>", "");
+        }
+
+        loop += 1;
+        std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
+
+        // Process commands, validate, and progressively derive
+        // for (input.items) |command| {
+        //     // if (validate_command(command)) {
+        //         const key_part = std.mem.trim(u8, std.mem.split(u8, command, "=")[0], " \t\n\r");
+        //         const action_part = std.mem.trim(u8, std.mem.split(u8, command, "=")[1], " \t\n\r");
+
+        //         // Replace the placeholders in sequence for each command
+        //         sentential_form = std.mem.replace(u8, sentential_form, "<command>", "\x1b[0;33mkey \x1b[1;37m<button>\x1b[1;0m\x1b[0;35m=\x1b[1;37m<action>\x1b[1;0m");
+        //         loop += 1;
+        //         std.debug.print("{02d}         ->  {}\n", .{ loop, sentential_form });
+
+        //         // Replace the <button> placeholder with the actual value
+        //         sentential_form = std.mem.replace(u8, sentential_form, "<button>", "\x1b[0;31m" ++ key_part.split(" ").last ++ "\x1b[1;0m");
+        //         loop += 1;
+        //         std.debug.print("{02d}         ->  {}\n", .{ loop, sentential_form });
+
+        //         // Replace the <action> placeholder with the actual value
+        //         sentential_form = std.mem.replace(u8, sentential_form, "<action>", "\x1b[0;34m" ++ action_part ++ "\x1b[1;0m");
+        //         loop += 1;
+        //         std.debug.print("{02d}         ->  {}\n", .{ loop, sentential_form });
+        //     // } else {
+        //     //     return false;
+        //     // }
+        // }
+        std.debug.print("\x1b[0;0m\n", .{});
+        return true;
+    } else {
+        // Handle invalid format (if "wake" or "sleep" is missing or misplaced)
+        std.debug.print("\n************************************************************\n", .{});
+        std.debug.print("\x1b[0;31mError: Input must start with 'wake' and end with 'sleep'\x1b[0;0m\n", .{});
+        return false;
     }
 }
