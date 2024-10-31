@@ -29,7 +29,12 @@ pub fn main() !void {
         }
 
         // Call Derivation and handle potential error
-        
+        std.debug.print("\n---------------------------------------------------------------------n", .{});
+        std.debug.print("\nPress Enter to continue with Leftmost Derivation\n", .{});
+
+        // Wait for the user to press Enter
+        var buffer2: [1]u8 = undefined; // Buffer for input
+        _ = try stdin.read(buffer2[0..1]); // Read until Enter is pressed
 
         try parse(input.?);
         const derivation_success: bool = try leftmost_derivation(tokens);
@@ -267,7 +272,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                         if (!complete_control) {
                             // Check to see if we're at the last control
                             // Once we reach the last control, replace <controls> with just <control>
-                            if (index_inner == input.capacity - 1) {
+                            if (index_inner == input.items.len - 1) {
                                 std.debug.print("END OF SEQUENCE\n", .{});
 
                                 std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
