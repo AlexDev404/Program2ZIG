@@ -268,6 +268,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                             if (index_inner == input.capacity - 1) {
                                 std.debug.print("END OF SEQUENCE\n", .{});
 
+                                std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                                 const replacement = "<control>";
                                 const size = std.mem.replacementSize(u8, original_form, "<controls>", replacement);
                                 var output: []const u8 = try allocator.alloc(u8, size);
@@ -336,7 +337,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                     _ = std.mem.replace(u8, original_form, "<key>", replacement, output);
                     original_form = output;
                     loop += 1;
-                    std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
+                    // std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                     is_at_var = false;
                     break;
                 } else {
