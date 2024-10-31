@@ -139,14 +139,14 @@ pub fn parse(input: []const u8) !void {
     // Count semicolons
     var count: usize = 0;
     // Iterate through each character in the input string
-    for (input) |sc| {
+    for (user_input) |sc| {
         if (sc == ';') {
             count += 1; // Increment the count if a semicolon is found
         }
     }
 
     // Find the position of the first semicolon
-    const semicolon_index = std.mem.indexOf(u8, input, ";");
+    const semicolon_index = std.mem.indexOf(u8, user_input, ";");
 
     // If no semicolon is found, return the entire input as is
     if (semicolon_index == null) {
@@ -154,9 +154,9 @@ pub fn parse(input: []const u8) !void {
         return;
     }
 
-    // Derefernce the index
+    // Dereference the index
     const derivation = semicolon_index.?;
-    const first_derivation = input[0..derivation];
+    const first_derivation = user_input[0..derivation];
 
     std.debug.print("First derivation: '{s}'\n", .{first_derivation});
 
