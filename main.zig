@@ -310,9 +310,8 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 // const output = try allocator.alloc(u8, size);
                 // sentential_form = std.mem.replace(u8, sentential_form, "<control>", );
 
-            var output: []const u8 = try allocator.alloc(u8, size);
-            // sentential_form = std.mem.replace(u8, sentential_form, "<controls>", "");
-            output = try replaceFirstOccurrence(sentential_form, "<controls>", replacement);
+                var output: []const u8 = try allocator.alloc(u8, size);
+                output = try replaceFirstOccurrence(sentential_form, "<control>", replacement);
                 // _ = std.mem.replace(u8, sentential_form, "<control>", replacement, output);
                 sentential_form = output;
                 loop += 1;
@@ -364,7 +363,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         // continue;
     } else {
         // Handle invalid format (if "wake" or "sleep" is missing or misplaced)
-        std.debug.print("\n************************************************************\n", .{});
+        std.debug.print("\n------------------------------------------------------------\n", .{});
         std.debug.print("\x1b[0;31mError: Input must start with 'wake' and end with 'sleep'\x1b[0;0m\n", .{});
         return false;
     }
