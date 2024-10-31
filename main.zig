@@ -33,7 +33,7 @@ pub fn main() !void {
         }
 
         // Call Derivation and handle potential error
-        try get_controls(input.?);
+        try parse(input.?);
     }
 }
 
@@ -92,7 +92,7 @@ pub fn tokenize_controls(input: []const u8) !void {
 // ------------------------------------------------- Derivation Process -------------------------------------------------
 
 // To get the controls, wake and sleep will be removed
-pub fn get_controls(input: []const u8) !void {
+pub fn parse(input: []const u8) !void {
     std.debug.print("\nLeftmost Derivation\n", .{});
     var user_input = input;
 
@@ -135,12 +135,6 @@ pub fn get_controls(input: []const u8) !void {
 
     // Print the user input after removing "wake" and "sleep"
     // std.debug.print("User input after removing 'wake' and 'sleep': '{s}'\n", .{user_input});
-
-    try parse_controls(user_input);
-}
-
-// Parsing the instuctions to be derivated
-pub fn parse_controls(input: []const u8) !void {
 
     // Count semicolons
     var count: usize = 0;
