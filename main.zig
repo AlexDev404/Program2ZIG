@@ -105,7 +105,7 @@ pub fn parse(input: []const u8) !void {
 
     // Check if there is content between "wake" and "sleep"
     if (user_input.len <= 11) { // 10 characters for validation
-        std.debug.print("Error: No content between wake and sleep.\n", .{});
+        std.debug.print("\x1b[0;31mError: No content between wake and sleep.\x1b[0;0m\n", .{});
         return;
     }
 
@@ -368,12 +368,16 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         std.debug.print("\x1b[0;0m\n", .{});
         // return true;
         // continue;
-    } else {
-        // Handle invalid format (if "wake" or "sleep" is missing or misplaced)
-        std.debug.print("\n------------------------------------------------------------\n", .{});
-        std.debug.print("\x1b[0;31mError: Input must start with 'wake' and end with 'sleep'\x1b[0;0m\n", .{});
-        return false;
-    }
+    } 
+
+    return true;
+    
+    // else {
+    //     // Handle invalid format (if "wake" or "sleep" is missing or misplaced)
+    //     std.debug.print("\n------------------------------------------------------------\n", .{});
+    //     std.debug.print("\x1b[0;31mError: Input must start with 'wake' and end with 'sleep'\x1b[0;0m\n", .{});
+    //     return false;
+    // }
 }
 
 fn replaceFirstOccurrence(original: []const u8, target: []const u8, replacement: []const u8) ![]const u8 {
