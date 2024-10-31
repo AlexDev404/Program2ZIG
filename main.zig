@@ -231,7 +231,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
             // _ = std.mem.replace(u8, str, "_", " ", output);
             ///////////////////////
             // First step: Replace the first <commands> with <command><commands>
-            sentential_form = "";
+            std.debug.print("Initial form: '{s}'\n", .{sentential_form});
             _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
             sentential_form = output;
             std.debug.print("Sentential form: '{s}'\n", .{sentential_form});
