@@ -196,6 +196,8 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
 
     // Step 2: Progressively replace <controls> with <control><controls> for each control
     var complete_control: bool = false;
+    var past_equal: bool = false;
+    var no_display: bool = false;
     for (input.items, 0..) |current_token, index| {
         std.debug.print("C_INDEX:  {d}--- C_TOKEN: {s}\n", .{ index, current_token });
         if (std.mem.eql(u8, std.mem.trim(u8, current_token, " \t"), "")) {
@@ -215,10 +217,13 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         }
 
         loop += 1;
-        std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
+
+        if (no_display) {
+            std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
+            no_display = false;
+        }
 
         // Inner loop: Process controls, validate, and progressively derive
-        var past_equal: bool = false;
         var is_at_var: bool = false;
         for (input.items, 0..) |control_inner, index_inner| {
             var control = control_inner;
@@ -254,12 +259,14 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 }
                 if (std.mem.eql(u8, control, "=")) {
                     past_equal = true;
-                    // if (complete_control and index == 1) {
+                    std.debug.print("PAST_EQUAL_O: {}\n", .{past_equal});
+                    if (!complete_control) {
                         // Make a patch replacement for the first control we missed
                         continue;
-                    // } else {
-                        // break;
-                    // }
+                    } else {
+                        no_display = true;
+                        break;
+                    }
                 }
                 if (past_equal) {
                     std.debug.print("PAST_EQUAL: {s}\n", .{control});
@@ -350,7 +357,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                 break;
             } else {
-                std.debug.print("\x1b[0;31mError: Invalid movement control\x1b[1;0m\n", .{});
+                std.debug.print("\x1b[0;31mError: Invalid movement control. Got '{s}'\x1b[1;0m\n", .{action_part});
                 return false;
             }
             // } else {
