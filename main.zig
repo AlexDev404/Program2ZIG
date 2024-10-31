@@ -92,7 +92,7 @@ pub fn tokenize_controls(input: []const u8) !void {
 
 // To get the controls, wake and sleep will be removed
 pub fn parse(input: []const u8) !void {
-    std.debug.print("\nLeftmost Derivation\n", .{});
+    // std.debug.print("\nLeftmost Derivation\n", .{});
     var user_input = input;
     var next_input: []const u8 = "";
 
@@ -132,7 +132,7 @@ pub fn parse(input: []const u8) !void {
 
     // Make `next_input` equal to substring of `input` minus the end slice
     next_input = user_input;
-    std.debug.print("Next input 1: '{s}'\n", .{next_input});
+    // std.debug.print("Next input 1: '{s}'\n", .{next_input});
 
     // Remove the "sleep" suffix
     user_input = user_input[0 .. user_input.len - sleep_suffix.len];
@@ -162,10 +162,10 @@ pub fn parse(input: []const u8) !void {
     const derivation = semicolon_index.?;
     const first_derivation = user_input[0..derivation];
 
-    std.debug.print("First derivation: '{s}'\n", .{first_derivation});
+    // std.debug.print("First derivation: '{s}'\n", .{first_derivation});
 
     // Use this later to iterate
-    std.debug.print("Count: '{d}'\n", .{count});
+    // std.debug.print("Count: '{d}'\n", .{count});
 
     // Get the next input to parse
     next_input = std.mem.trim(u8, user_input[first_derivation.len + 1 ..], " \t\n\r");
