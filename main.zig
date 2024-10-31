@@ -207,15 +207,15 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
     var no_display: bool = false;
     for (input.items, 0..) |current_token, index| {
         // std.debug.print("C_INDEX:  {d}--- C_TOKEN: {s}\n", .{ index, current_token });
-        if (std.mem.eql(u8, std.mem.trim(u8, current_token, " \t"), "")) {
+        if (std.mem.eql(u8, std.mem.trim(u8, current_token, " \t\n\r"), "")) {
             // Strip spaces and tabs
             continue;
         }
 
-        if (no_display) {
+        // no_display == Should we display the current step?
+        if (no_display) { // Yes, display the current step
             std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
             no_display = false;
-        } else {
             loop += 1;
         }
         // Inner loop: Process controls, validate, and progressively derive
