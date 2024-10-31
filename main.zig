@@ -221,20 +221,13 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
     // Step 2: Progressively replace <commands> with <command><commands> for each command
     for (input.items, 0..) |_, index| {
         if (index == 0) {
-            //////////////////////////////////
-            // str: []const u8
             const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
             const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
             const allocator = std.heap.page_allocator;
             const output = try allocator.alloc(u8, size);
             
-            // _ = std.mem.replace(u8, str, "_", " ", output);
-            ///////////////////////
-            // First step: Replace the first <commands> with <command><commands>
-            std.debug.print("Initial form: '{s}'\n", .{sentential_form});
             _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
             sentential_form = output;
-            std.debug.print("Sentential form: '{s}'\n", .{sentential_form});
         } else {
             // For subsequent steps, replace the remaining <commands> with <command><commands> progressively
             // sentential_form = std.mem.replace(u8, sentential_form, "<commands>", "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m");
