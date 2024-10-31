@@ -206,7 +206,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
     var past_equal: bool = false;
     var no_display: bool = false;
     for (input.items, 0..) |current_token, index| {
-        std.debug.print("C_INDEX:  {d}--- C_TOKEN: {s}\n", .{ index, current_token });
+        // std.debug.print("C_INDEX:  {d}--- C_TOKEN: {s}\n", .{ index, current_token });
         if (std.mem.eql(u8, std.mem.trim(u8, current_token, " \t"), "")) {
             // Strip spaces and tabs
             continue;
@@ -224,7 +224,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         for (input.items, 0..) |control_inner, index_inner| {
             var control = control_inner;
 
-            std.debug.print("CONTROL: {s}\n", .{control});
+            // std.debug.print("CONTROL: {s}\n", .{control});
             // if (validate_control(control)) {
 
             // Split the control into key and action parts
@@ -241,7 +241,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 control = "key";
                 at_key = true;
             }
-            std.debug.print("UPDATED_CONTROL: {s}\nINNER_INDEX: {d}\n", .{ control, index_inner });
+            // std.debug.print("UPDATED_CONTROL: {s}\nINNER_INDEX: {d}\n", .{ control, index_inner });
 
             if (control.len > 0) {
                 if (std.mem.eql(u8, control, "key")) {
@@ -255,7 +255,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 }
                 if (std.mem.eql(u8, control, "=")) {
                     past_equal = true;
-                    std.debug.print("PAST_EQUAL_O: {}\n", .{past_equal});
+                    // std.debug.print("PAST_EQUAL_O: {}\n", .{past_equal});
                     if (!complete_control) {
                         // Make a patch replacement for the first control we missed
                         continue;
@@ -265,7 +265,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                     }
                 }
                 if (past_equal) {
-                    std.debug.print("PAST_EQUAL: {s}\n", .{control});
+                    // std.debug.print("PAST_EQUAL: {s}\n", .{control});
                     if (std.mem.eql(u8, control, "DRIVE") or std.mem.eql(u8, control, "BACK") or std.mem.eql(u8, control, "LEFT") or std.mem.eql(u8, control, "RIGHT") or std.mem.eql(u8, control, "SPINL") or std.mem.eql(u8, control, "SPINR")) {
                         action_part = control;
                         past_equal = false;
@@ -273,7 +273,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                             // Check to see if we're at the last control
                             // Once we reach the last control, replace <controls> with just <control>
                             if (index_inner == input.items.len - 1) {
-                                std.debug.print("END OF SEQUENCE\n", .{});
+                                // std.debug.print("END OF SEQUENCE\n", .{});
 
                                 std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                                 const replacement = "<control>";
@@ -307,7 +307,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                         }
                         // continue;
                     } else {
-                        std.debug.print("\x1b[0;31mError2: Invalid movement control\x1b[1;0m\n", .{});
+                        std.debug.print("\x1b[0;31mError: Invalid movement control\x1b[1;0m\n", .{});
                         return false;
                     }
                 }
