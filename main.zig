@@ -34,10 +34,10 @@ pub fn main() !void {
 
         // Call Derivation and handle potential error
         try parse(input.?);
-        const derivation_error: bool = try leftmost_derivation(tokens);
-        if(derivation_error){
+        const derivation_success: bool = try leftmost_derivation(tokens);
+        if (!derivation_success) {
             std.debug.print("Error in derivation\n", .{});
-            return;
+            try main();
         }
     }
 }
@@ -217,54 +217,129 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
     sentential_form = "\x1b[0;32mwake \x1b[1;37m<commands>\x1b[1;0m  \x1b[0;32msleep\x1b[1;0m ";
     std.debug.print("\n<program>  ->  {s}\n", .{sentential_form});
     var loop: usize = 1;
+    const allocator = std.heap.page_allocator;
 
     // Step 2: Progressively replace <commands> with <command><commands> for each command
     for (input.items, 0..) |_, index| {
+        std.debug.print("C_INDEX:  {d}\n", .{index});
         if (index == 0) {
             const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
             const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
-            const allocator = std.heap.page_allocator;
             const output = try allocator.alloc(u8, size);
-            
+
             _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
             sentential_form = output;
         } else {
+
+            const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
+            const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
+            const output = try allocator.alloc(u8, size);
+
             // For subsequent steps, replace the remaining <commands> with <command><commands> progressively
-            // sentential_form = std.mem.replace(u8, sentential_form, "<commands>", "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m");
+            _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+            sentential_form = output;
         }
 
         // Once we reach the last command, replace <commands> with just <command>
         if (index == input.capacity - 1) {
+            const replacement = "";
+            const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
+            const output = try allocator.alloc(u8, size);
             // sentential_form = std.mem.replace(u8, sentential_form, "<commands>", "");
+            _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+            sentential_form = output;
         }
 
         loop += 1;
         std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
 
         // Process commands, validate, and progressively derive
-        // for (input.items) |command| {
-        //     // if (validate_command(command)) {
-        //         const key_part = std.mem.trim(u8, std.mem.split(u8, command, "=")[0], " \t\n\r");
-        //         const action_part = std.mem.trim(u8, std.mem.split(u8, command, "=")[1], " \t\n\r");
+        var past_equal: bool = false;
+        var is_at_var: bool = false;
+        for (input.items) |command| {
+            // if (validate_command(command)) {
 
-        //         // Replace the placeholders in sequence for each command
-        //         sentential_form = std.mem.replace(u8, sentential_form, "<command>", "\x1b[0;33mkey \x1b[1;37m<button>\x1b[1;0m\x1b[0;35m=\x1b[1;37m<action>\x1b[1;0m");
-        //         loop += 1;
-        //         std.debug.print("{02d}         ->  {}\n", .{ loop, sentential_form });
+            // Split the command into key and action parts
+            var key_part: []const u8 = undefined;
+            var action_part: []const u8 = undefined;
+            var at_key: bool = false;
 
-        //         // Replace the <button> placeholder with the actual value
-        //         sentential_form = std.mem.replace(u8, sentential_form, "<button>", "\x1b[0;31m" ++ key_part.split(" ").last ++ "\x1b[1;0m");
-        //         loop += 1;
-        //         std.debug.print("{02d}         ->  {}\n", .{ loop, sentential_form });
+            if (command.len > 0) {
+                if (std.mem.eql(u8, command, "key")) {
+                    at_key = true;
+                }
+                if (std.mem.eql(u8, command, "a") or std.mem.eql(u8, command, "b") or std.mem.eql(u8, command, "c") or std.mem.eql(u8, command, "d")) {
+                    key_part = command;
+                    is_at_var = true;
+                }
+                if (std.mem.eql(u8, command, "=")) {
+                    past_equal = true;
+                    continue;
+                }
+                if (past_equal) {
+                    if (std.mem.eql(u8, command, "DRIVE") or std.mem.eql(u8, command, "BACK") or std.mem.eql(u8, command, "LEFT") or std.mem.eql(u8, command, "RIGHT") or std.mem.eql(u8, command, "SPINL") or std.mem.eql(u8, command, "SPINR")) {
+                        action_part = command;
+                        past_equal = false;
+                    } else {
+                        std.debug.print("\x1b[0;31mError: Invalid movement command\x1b[1;0m\n", .{});
+                        return false;
+                    }
+                }
+            }
 
-        //         // Replace the <action> placeholder with the actual value
-        //         sentential_form = std.mem.replace(u8, sentential_form, "<action>", "\x1b[0;34m" ++ action_part ++ "\x1b[1;0m");
-        //         loop += 1;
-        //         std.debug.print("{02d}         ->  {}\n", .{ loop, sentential_form });
-        //     // } else {
-        //     //     return false;
-        //     // }
-        // }
+            // Replace the placeholders in sequence for each command
+            if (at_key) {
+                const replacement = "\x1b[0;33mkey \x1b[1;37m<button>\x1b[1;0m\x1b[0;35m=\x1b[1;37m<action>\x1b[1;0m";
+                const size = std.mem.replacementSize(u8, sentential_form, "<command>", replacement);
+                const output = try allocator.alloc(u8, size);
+                // sentential_form = std.mem.replace(u8, sentential_form, "<command>", );
+
+                _ = std.mem.replace(u8, sentential_form, "<command>", replacement, output);
+                sentential_form = output;
+                loop += 1;
+                std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
+                continue;
+            }
+
+            if (is_at_var) {
+                if (std.mem.eql(u8, key_part, "a") or std.mem.eql(u8, key_part, "b") or std.mem.eql(u8, key_part, "c") or std.mem.eql(u8, key_part, "d")) {
+                    // Replace the <button> placeholder with the actual value
+                    const replacement = try std.fmt.allocPrint(allocator, "\x1b[0;31m{s}\x1b[1;0m", .{key_part});
+                    const size = std.mem.replacementSize(u8, sentential_form, "<button>", replacement);
+                    const output = try allocator.alloc(u8, size);
+                    // sentential_form = std.mem.replace(u8, sentential_form, "<button>", "\x1b[0;31m" ++ key_part ++ "\x1b[1;0m");
+
+                    _ = std.mem.replace(u8, sentential_form, "<button>", replacement, output);
+                    sentential_form = output;
+                    loop += 1;
+                    std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
+                    is_at_var = false;
+                    continue;
+                } else {
+                    std.debug.print("\x1b[0;31mError: Key must be 'a', 'b', 'c', or 'd'\x1b[1;0m\n", .{});
+                    return false;
+                }
+            }
+
+            if (std.mem.eql(u8, action_part, "DRIVE") or std.mem.eql(u8, action_part, "BACK") or std.mem.eql(u8, action_part, "LEFT") or std.mem.eql(u8, action_part, "RIGHT") or std.mem.eql(u8, action_part, "SPINL") or std.mem.eql(u8, action_part, "SPINR")) {
+                // Replace the <action> placeholder with the actual value
+                const replacement = try std.fmt.allocPrint(allocator, "\x1b[0;34m{s}\x1b[1;0m", .{action_part});
+                const size = std.mem.replacementSize(u8, sentential_form, "<action>", replacement);
+                const output = try allocator.alloc(u8, size);
+                // sentential_form = std.mem.replace(u8, sentential_form, "<action>", "\x1b[0;34m" ++ action_part ++ "\x1b[1;0m");
+                _ = std.mem.replace(u8, sentential_form, "<action>", replacement, output);
+                sentential_form = output;
+                loop += 1;
+                std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
+                continue;
+            } else {
+                std.debug.print("\x1b[0;31mError: Invalid movement command\x1b[1;0m\n", .{});
+                return false;
+            }
+            // } else {
+            //     return false;
+            // }
+        }
         std.debug.print("\x1b[0;0m\n", .{});
         return true;
     } else {
