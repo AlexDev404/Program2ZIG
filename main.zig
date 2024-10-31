@@ -29,7 +29,7 @@ pub fn main() !void {
         }
 
         // Call Derivation and handle potential error
-        std.debug.print("\n---------------------------------------------------------------------n", .{});
+        std.debug.print("\n---------------------------------------------------------------------\n", .{});
         std.debug.print("\nPress Enter to continue with Leftmost Derivation\n", .{});
 
         // Wait for the user to press Enter
