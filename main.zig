@@ -37,7 +37,6 @@ pub fn main() !void {
     }
 }
 
-
 // ------------------------------------------------- Utility Function -------------------------------------------------
 // Function to display the BNF grammar
 pub fn display_bnf() void {
@@ -95,6 +94,7 @@ pub fn tokenize_controls(input: []const u8) !void {
 pub fn parse(input: []const u8) !void {
     std.debug.print("\nLeftmost Derivation\n", .{});
     var user_input = input;
+    var next_input: []const u8 = "";
 
     // Define the prefix and suffix
     const wake_prefix = "wake ";
@@ -130,6 +130,10 @@ pub fn parse(input: []const u8) !void {
         return;
     }
 
+    // Make `next_input` equal to substring of `input` minus the end slice
+    next_input = user_input;
+    std.debug.print("Next input 1: '{s}'\n", .{next_input});
+
     // Remove the "sleep" suffix
     user_input = user_input[0 .. user_input.len - sleep_suffix.len];
 
@@ -163,5 +167,26 @@ pub fn parse(input: []const u8) !void {
     // Use this later to iterate
     std.debug.print("Count: '{d}'\n", .{count});
 
+    // Get the next input to parse
+    next_input = std.mem.trim(u8, user_input[first_derivation.len + 1 ..], " \t\n\r");
+    // Print user_input
+    // std.debug.print("User input: '{s}'\n", .{user_input});
+    // std.debug.print("Next input: '{s}'\n", .{next_input});
     try tokenize_controls(first_derivation);
+
+    // Continue parsing the remaining input
+    while (next_input.len > 0) {
+        const next_semicolon_index = std.mem.indexOf(u8, next_input, ";");
+
+        if (next_semicolon_index == null) {
+            std.debug.print("Error: Missing semicolon in controls.\n", .{});
+            return;
+        }
+
+        const next_derivation = next_semicolon_index.?;
+        const next_control = next_input[0..next_derivation];
+        try tokenize_controls(next_control);
+
+        next_input = std.mem.trim(u8, next_input[next_derivation + 1 ..], " \t\n\r");
+    }
 }
