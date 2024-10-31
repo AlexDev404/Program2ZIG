@@ -212,13 +212,12 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
             continue;
         }
 
-        loop += 1;
-
         if (no_display) {
             std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
             no_display = false;
+        } else {
+            loop += 1;
         }
-
         // Inner loop: Process controls, validate, and progressively derive
         var is_at_var: bool = false;
         for (input.items, 0..) |control_inner, index_inner| {
@@ -297,7 +296,8 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                                 const replacement = "\x1b[1;37m<control>\x1b[0;35m; \x1b[1;37m<controls>\x1b[1;0m";
                                 const size = std.mem.replacementSize(u8, original_form, "<controls>", replacement);
                                 const output = try allocator.alloc(u8, size);
-
+                                std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
+                                loop += 1;
                                 // For subsequent steps, replace the remaining <controls> with <control><controls> progressively
                                 _ = std.mem.replace(u8, original_form, "<controls>", replacement, output);
                                 original_form = output;
@@ -324,7 +324,9 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 output = try replaceFirstOccurrence(original_form, "<control>", replacement);
                 // _ = std.mem.replace(u8, original_form, "<control>", replacement, output);
                 original_form = output;
-                loop += 1;
+                if (complete_control) {
+                    loop += 1;
+                }
                 std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                 if (index == 1 and index_inner == 0) {
                     continue;
@@ -343,7 +345,9 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
 
                     _ = std.mem.replace(u8, original_form, "<key>", replacement, output);
                     original_form = output;
-                    loop += 1;
+                    if (complete_control) {
+                        loop += 1;
+                    }
                     // std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                     is_at_var = false;
                     break;
@@ -361,7 +365,9 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 // original_form = std.mem.replace(u8, original_form, "<action>", "\x1b[0;34m" ++ action_part ++ "\x1b[1;0m");
                 _ = std.mem.replace(u8, original_form, "<action>", replacement, output);
                 original_form = output;
-                loop += 1;
+                if (complete_control) {
+                    loop += 1;
+                }
                 std.debug.print("{d}         ->  {s}\n", .{ loop, original_form });
                 break;
             } else {
@@ -375,10 +381,10 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         std.debug.print("\x1b[0;0m\n", .{});
         // return true;
         // continue;
-    } 
+    }
 
     return true;
-    
+
     // else {
     //     // Handle invalid format (if "wake" or "sleep" is missing or misplaced)
     //     std.debug.print("\n------------------------------------------------------------\n", .{});
