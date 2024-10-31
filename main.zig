@@ -37,7 +37,7 @@ pub fn main() !void {
         const derivation_success: bool = try leftmost_derivation(tokens);
         if (!derivation_success) {
             std.debug.print("Error in derivation\n", .{});
-            try main();
+            // try main();
         }
     }
 }
@@ -220,24 +220,12 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
     const allocator = std.heap.page_allocator;
 
     // Step 2: Progressively replace <commands> with <command><commands> for each command
-    for (input.items, 0..) |_, index| {
-        std.debug.print("C_INDEX:  {d}\n", .{index});
-        if (index == 0) {
-            const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
-            const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
-            const output = try allocator.alloc(u8, size);
-
-            _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
-            sentential_form = output;
-        } else {
-
-            const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
-            const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
-            const output = try allocator.alloc(u8, size);
-
-            // For subsequent steps, replace the remaining <commands> with <command><commands> progressively
-            _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
-            sentential_form = output;
+    const complete_command: bool = false;
+    for (input.items, 0..) |current_token, index| {
+        std.debug.print("C_INDEX:  {d}--- C_TOKEN: {s}\n", .{ index, current_token });
+        if (std.mem.eql(u8, std.mem.trim(u8, current_token, " \t"), "")) {
+            // Strip spaces and tabs
+            continue;
         }
 
         // Once we reach the last command, replace <commands> with just <command>
@@ -253,10 +241,11 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         loop += 1;
         std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
 
-        // Process commands, validate, and progressively derive
+        // Inner loop: Process commands, validate, and progressively derive
         var past_equal: bool = false;
         var is_at_var: bool = false;
         for (input.items) |command| {
+            std.debug.print("COMMAND: {s}\n", .{command});
             // if (validate_command(command)) {
 
             // Split the command into key and action parts
@@ -267,10 +256,12 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
             if (command.len > 0) {
                 if (std.mem.eql(u8, command, "key")) {
                     at_key = true;
+                    if (!complete_command) continue;
                 }
                 if (std.mem.eql(u8, command, "a") or std.mem.eql(u8, command, "b") or std.mem.eql(u8, command, "c") or std.mem.eql(u8, command, "d")) {
                     key_part = command;
                     is_at_var = true;
+                    if (!complete_command) continue;
                 }
                 if (std.mem.eql(u8, command, "=")) {
                     past_equal = true;
@@ -280,6 +271,25 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                     if (std.mem.eql(u8, command, "DRIVE") or std.mem.eql(u8, command, "BACK") or std.mem.eql(u8, command, "LEFT") or std.mem.eql(u8, command, "RIGHT") or std.mem.eql(u8, command, "SPINL") or std.mem.eql(u8, command, "SPINR")) {
                         action_part = command;
                         past_equal = false;
+                        if (!complete_command) {
+                            if (index == 0) {
+                                const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
+                                const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
+                                const output = try allocator.alloc(u8, size);
+
+                                _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+                                sentential_form = output;
+                            } else {
+                                const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
+                                const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
+                                const output = try allocator.alloc(u8, size);
+
+                                // For subsequent steps, replace the remaining <commands> with <command><commands> progressively
+                                _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+                                sentential_form = output;
+                            }
+                            break;
+                        }
                     } else {
                         std.debug.print("\x1b[0;31mError: Invalid movement command\x1b[1;0m\n", .{});
                         return false;
@@ -331,7 +341,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 sentential_form = output;
                 loop += 1;
                 std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
-                continue;
+                break;
             } else {
                 std.debug.print("\x1b[0;31mError: Invalid movement command\x1b[1;0m\n", .{});
                 return false;
@@ -341,7 +351,8 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
             // }
         }
         std.debug.print("\x1b[0;0m\n", .{});
-        return true;
+        // return true;
+        // continue;
     } else {
         // Handle invalid format (if "wake" or "sleep" is missing or misplaced)
         std.debug.print("\n************************************************************\n", .{});
