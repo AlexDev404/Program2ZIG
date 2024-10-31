@@ -205,17 +205,6 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
             continue;
         }
 
-        // Once we reach the last control, replace <controls> with just <control>
-        if (index == input.capacity - 1) {
-            const replacement = "";
-            const size = std.mem.replacementSize(u8, original_form, "<controls>", replacement);
-            var output: []const u8 = try allocator.alloc(u8, size);
-            // original_form = std.mem.replace(u8, original_form, "<controls>", "");
-            output = try replaceFirstOccurrence(original_form, "<controls>", replacement);
-            // _ = std.mem.replace(u8, original_form, "<controls>", replacement, output);
-            original_form = output;
-        }
-
         loop += 1;
 
         if (no_display) {
@@ -275,8 +264,18 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                         past_equal = false;
                         if (!complete_control) {
                             // Check to see if we're at the last control
+                            // Once we reach the last control, replace <controls> with just <control>
                             if (index_inner == input.capacity - 1) {
                                 std.debug.print("END OF SEQUENCE\n", .{});
+
+                                const replacement = "<control>";
+                                const size = std.mem.replacementSize(u8, original_form, "<controls>", replacement);
+                                var output: []const u8 = try allocator.alloc(u8, size);
+                                // original_form = std.mem.replace(u8, original_form, "<controls>", "");
+                                output = try replaceFirstOccurrence(original_form, "<controls>", replacement);
+                                // _ = std.mem.replace(u8, original_form, "<controls>", replacement, output);
+                                original_form = output;
+
                                 complete_control = true;
                                 break;
                             } else if (index_inner == 0) {
@@ -295,6 +294,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                                 _ = std.mem.replace(u8, original_form, "<controls>", replacement, output);
                                 original_form = output;
                             }
+
                             continue;
                         }
                         // continue;
