@@ -214,13 +214,13 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
 
     // Step 1: Initial form
     var sentential_form: []const u8 = undefined;
-    sentential_form = "\x1b[0;32mwake \x1b[1;37m<commands>\x1b[1;0m  \x1b[0;32msleep\x1b[1;0m ";
+    sentential_form = "\x1b[0;32mwake \x1b[1;37m<controls>\x1b[1;0m  \x1b[0;32msleep\x1b[1;0m ";
     std.debug.print("\n<program>  ->  {s}\n", .{sentential_form});
     var loop: usize = 1;
     const allocator = std.heap.page_allocator;
 
-    // Step 2: Progressively replace <commands> with <command><commands> for each command
-    const complete_command: bool = false;
+    // Step 2: Progressively replace <controls> with <control><controls> for each control
+    var complete_control: bool = false;
     for (input.items, 0..) |current_token, index| {
         std.debug.print("C_INDEX:  {d}--- C_TOKEN: {s}\n", .{ index, current_token });
         if (std.mem.eql(u8, std.mem.trim(u8, current_token, " \t"), "")) {
@@ -228,83 +228,92 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
             continue;
         }
 
-        // Once we reach the last command, replace <commands> with just <command>
+        // Once we reach the last control, replace <controls> with just <control>
         if (index == input.capacity - 1) {
             const replacement = "";
-            const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
-            const output = try allocator.alloc(u8, size);
-            // sentential_form = std.mem.replace(u8, sentential_form, "<commands>", "");
-            _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+            const size = std.mem.replacementSize(u8, sentential_form, "<controls>", replacement);
+            var output: []const u8 = try allocator.alloc(u8, size);
+            // sentential_form = std.mem.replace(u8, sentential_form, "<controls>", "");
+            output = try replaceFirstOccurrence(sentential_form, "<controls>", replacement);
+            // _ = std.mem.replace(u8, sentential_form, "<controls>", replacement, output);
             sentential_form = output;
         }
 
         loop += 1;
         std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
 
-        // Inner loop: Process commands, validate, and progressively derive
+        // Inner loop: Process controls, validate, and progressively derive
         var past_equal: bool = false;
         var is_at_var: bool = false;
-        for (input.items) |command| {
-            std.debug.print("COMMAND: {s}\n", .{command});
-            // if (validate_command(command)) {
+        for (input.items, 0..) |control, index_inner| {
+            std.debug.print("CONTROL: {s}\n", .{control});
+            // if (validate_control(control)) {
 
-            // Split the command into key and action parts
+            // Split the control into key and action parts
             var key_part: []const u8 = undefined;
             var action_part: []const u8 = undefined;
             var at_key: bool = false;
 
-            if (command.len > 0) {
-                if (std.mem.eql(u8, command, "key")) {
+            if (control.len > 0) {
+                if (std.mem.eql(u8, control, "key")) {
                     at_key = true;
-                    if (!complete_command) continue;
+                    if (!complete_control) continue;
                 }
-                if (std.mem.eql(u8, command, "a") or std.mem.eql(u8, command, "b") or std.mem.eql(u8, command, "c") or std.mem.eql(u8, command, "d")) {
-                    key_part = command;
+                if (std.mem.eql(u8, control, "a") or std.mem.eql(u8, control, "b") or std.mem.eql(u8, control, "c") or std.mem.eql(u8, control, "d")) {
+                    key_part = control;
                     is_at_var = true;
-                    if (!complete_command) continue;
+                    if (!complete_control) continue;
                 }
-                if (std.mem.eql(u8, command, "=")) {
+                if (std.mem.eql(u8, control, "=")) {
                     past_equal = true;
                     continue;
                 }
                 if (past_equal) {
-                    if (std.mem.eql(u8, command, "DRIVE") or std.mem.eql(u8, command, "BACK") or std.mem.eql(u8, command, "LEFT") or std.mem.eql(u8, command, "RIGHT") or std.mem.eql(u8, command, "SPINL") or std.mem.eql(u8, command, "SPINR")) {
-                        action_part = command;
+                    if (std.mem.eql(u8, control, "DRIVE") or std.mem.eql(u8, control, "BACK") or std.mem.eql(u8, control, "LEFT") or std.mem.eql(u8, control, "RIGHT") or std.mem.eql(u8, control, "SPINL") or std.mem.eql(u8, control, "SPINR")) {
+                        action_part = control;
                         past_equal = false;
-                        if (!complete_command) {
-                            if (index == 0) {
-                                const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
-                                const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
+                        if (!complete_control) {
+                            // Check to see if we're at the last control
+                            if (index_inner == input.capacity - 1) {
+                                std.debug.print("END OF SEQUENCE\n", .{});
+                                complete_control = true;
+                                break;
+                            } else if (index_inner == 0) {
+                                const replacement = "\x1b[1;37m<control>\x1b[0;35m; \x1b[1;37m<controls>\x1b[1;0m";
+                                const size = std.mem.replacementSize(u8, sentential_form, "<controls>", replacement);
                                 const output = try allocator.alloc(u8, size);
 
-                                _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+                                _ = std.mem.replace(u8, sentential_form, "<controls>", replacement, output);
                                 sentential_form = output;
                             } else {
-                                const replacement = "\x1b[1;37m<command>\x1b[0;35m; \x1b[1;37m<commands>\x1b[1;0m";
-                                const size = std.mem.replacementSize(u8, sentential_form, "<commands>", replacement);
+                                const replacement = "\x1b[1;37m<control>\x1b[0;35m; \x1b[1;37m<controls>\x1b[1;0m";
+                                const size = std.mem.replacementSize(u8, sentential_form, "<controls>", replacement);
                                 const output = try allocator.alloc(u8, size);
 
-                                // For subsequent steps, replace the remaining <commands> with <command><commands> progressively
-                                _ = std.mem.replace(u8, sentential_form, "<commands>", replacement, output);
+                                // For subsequent steps, replace the remaining <controls> with <control><controls> progressively
+                                _ = std.mem.replace(u8, sentential_form, "<controls>", replacement, output);
                                 sentential_form = output;
                             }
-                            break;
+                            continue;
                         }
                     } else {
-                        std.debug.print("\x1b[0;31mError: Invalid movement command\x1b[1;0m\n", .{});
+                        std.debug.print("\x1b[0;31mError: Invalid movement control\x1b[1;0m\n", .{});
                         return false;
                     }
                 }
             }
 
-            // Replace the placeholders in sequence for each command
+            // Replace the placeholders in sequence for each control
             if (at_key) {
                 const replacement = "\x1b[0;33mkey \x1b[1;37m<button>\x1b[1;0m\x1b[0;35m=\x1b[1;37m<action>\x1b[1;0m";
-                const size = std.mem.replacementSize(u8, sentential_form, "<command>", replacement);
-                const output = try allocator.alloc(u8, size);
-                // sentential_form = std.mem.replace(u8, sentential_form, "<command>", );
+                const size = std.mem.replacementSize(u8, sentential_form, "<control>", replacement);
+                // const output = try allocator.alloc(u8, size);
+                // sentential_form = std.mem.replace(u8, sentential_form, "<control>", );
 
-                _ = std.mem.replace(u8, sentential_form, "<command>", replacement, output);
+            var output: []const u8 = try allocator.alloc(u8, size);
+            // sentential_form = std.mem.replace(u8, sentential_form, "<controls>", "");
+            output = try replaceFirstOccurrence(sentential_form, "<controls>", replacement);
+                // _ = std.mem.replace(u8, sentential_form, "<control>", replacement, output);
                 sentential_form = output;
                 loop += 1;
                 std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
@@ -343,7 +352,7 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
                 std.debug.print("{d}         ->  {s}\n", .{ loop, sentential_form });
                 break;
             } else {
-                std.debug.print("\x1b[0;31mError: Invalid movement command\x1b[1;0m\n", .{});
+                std.debug.print("\x1b[0;31mError: Invalid movement control\x1b[1;0m\n", .{});
                 return false;
             }
             // } else {
@@ -359,4 +368,24 @@ pub fn leftmost_derivation(input: std.ArrayList([]const u8)) !bool {
         std.debug.print("\x1b[0;31mError: Input must start with 'wake' and end with 'sleep'\x1b[0;0m\n", .{});
         return false;
     }
+}
+
+fn replaceFirstOccurrence(original: []const u8, target: []const u8, replacement: []const u8) ![]const u8 {
+    // std.ArrayList([]const u8).init(std.heap.page_allocator);
+    var result = std.ArrayList(u8).init(std.heap.page_allocator);
+    defer result.deinit();
+
+    var found = false;
+    var i: usize = 0;
+    while (i < original.len) : (i += 1) {
+        if (!found and std.mem.startsWith(u8, original[i..], target)) {
+            try result.appendSlice(replacement);
+            i += target.len - 1; // Skip the target substring
+            found = true;
+        } else {
+            try result.append(original[i]);
+        }
+    }
+
+    return result.toOwnedSlice();
 }
