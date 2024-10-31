@@ -7,11 +7,45 @@ const valid_keys: [4]u8 = [_]u8{ 'a', 'b', 'c', 'd' };
 const valid_movement: [4]u8 = [_]u8{ "DRIVE", "BACK", "LEFT", "RIGHT", "SPINL", "SPINR" };
 var tokens = std.ArrayList([]const u8).init(std.heap.page_allocator);
 
+// Main function that loops the process
+pub fn main() !void {
+    const stdin = std.io.getStdIn().reader();
+
+    // Continue getting input from the user until input is "END"
+    while (true) {
+        // Display BNF grammar
+        display_bnf();
+
+        // Prompt user to input string
+        std.debug.print("Enter a string (or 'END' to exit): ", .{});
+
+        // Storing the input
+        var buffer: [128]u8 = undefined;
+        const input = try stdin.readUntilDelimiterOrEof(&buffer, '\n');
+
+        // Check if the input length is at least 3
+        const exit_prog = "END";
+        const check = std.mem.eql(u8, input.?.ptr[0..3], exit_prog);
+
+        if (check == true) {
+            std.debug.print("Exiting program...\n\n", .{});
+            break;
+        }
+
+        // Call Derivation and handle potential error
+        try get_controls(input.?);
+    }
+}
+
+
+// ------------------------------------------------- Utility Function -------------------------------------------------
 // Function to display the BNF grammar
 pub fn display_bnf() void {
+    // Iterate through the tokens and print each one
     for (tokens.items) |token| {
         std.debug.print("{s}\n", .{token});
     }
+    // Clear and free the tokens list
     tokens.clearAndFree();
     std.debug.print("\n---------------- Meta-Language for iZEBOT Remote Control ----------------", .{});
     std.debug.print("\n------------------------------ BNF Grammar ------------------------------\n", .{});
@@ -24,11 +58,38 @@ pub fn display_bnf() void {
     std.debug.print("\n-------------------------------------------------------------------------\n\n", .{});
 }
 
+// ------------------------------------------------- Tokenization Function -------------------------------------------------
+// Function to check if the input is valid
+pub fn tokenize_controls(input: []const u8) !void {
+    var start_index: usize = 0;
+
+    while (start_index < input.len) {
+        // slice by space
+        const next_delimiter = std.mem.indexOf(u8, input[start_index..], " ");
+
+        // If a space delimiter is found, slice the token from start to the delimiter
+        if (next_delimiter) |idx| {
+            // Get the token and add it to the list
+            if (start_index < start_index + idx) {
+                const token = input[start_index .. start_index + idx];
+                //try parse_key(token[1]);
+                //try parse_movement(token[3]);
+                // std.debug.print("Second character of token {s}\n", .{token});
+                try tokens.append(token);
+            }
+            // Move the start index past the delimiter
+            start_index += idx + 1; // +1 to skip the space itself
+        } else {
+            // No more delimiters, add the last token
+            if (start_index < input.len) {
+                const token = input[start_index..];
+                try tokens.append(token);
+            }
+            break;
+        }
+    }
+}
 // ------------------------------------------------- Derivation Process -------------------------------------------------
-
-//pub fn parse_key(input: []const u8) !void {}
-
-//pub fn parse_movement(input: []const u8) !void {}
 
 // To get the controls, wake and sleep will be removed
 pub fn get_controls(input: []const u8) !void {
@@ -109,64 +170,4 @@ pub fn parse_controls(input: []const u8) !void {
     std.debug.print("Count: '{d}'\n", .{count});
 
     try tokenize_controls(first_derivation);
-}
-
-pub fn tokenize_controls(input: []const u8) !void {
-    var start_index: usize = 0;
-
-    while (start_index < input.len) {
-        // slice by space
-        const next_delimiter = std.mem.indexOf(u8, input[start_index..], " ");
-
-        // If a space delimiter is found, slice the token from start to the delimiter
-        if (next_delimiter) |idx| {
-            // Get the token and add it to the list
-            if (start_index < start_index + idx) {
-                const token = input[start_index .. start_index + idx];
-                //try parse_key(token[1]);
-                //try parse_movement(token[3]);
-                // std.debug.print("Second character of token {s}\n", .{token});
-                try tokens.append(token);
-            }
-            // Move the start index past the delimiter
-            start_index += idx + 1; // +1 to skip the space itself
-        } else {
-            // No more delimiters, add the last token
-            if (start_index < input.len) {
-                const token = input[start_index..];
-                try tokens.append(token);
-            }
-            break;
-        }
-    }
-}
-
-// Main function that loops the process
-pub fn main() !void {
-    const stdin = std.io.getStdIn().reader();
-
-    // Continue getting input from the user until input is "END"
-    while (true) {
-        // Display BNF grammar
-        display_bnf();
-
-        // Prompt user to input string
-        std.debug.print("Enter a string (or 'END' to exit): ", .{});
-
-        // Storing the input
-        var buffer: [128]u8 = undefined;
-        const input = try stdin.readUntilDelimiterOrEof(&buffer, '\n');
-
-        // Check if the input length is at least 3
-        const exit_prog = "END";
-        const check = std.mem.eql(u8, input.?.ptr[0..3], exit_prog);
-
-        if (check == true) {
-            std.debug.print("Exiting program...\n\n", .{});
-            break;
-        }
-
-        // Call Derivation and handle potential error
-        try get_controls(input.?);
-    }
 }
